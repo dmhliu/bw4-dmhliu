@@ -16,6 +16,10 @@ fastapi = "*"
 pandas = "*"
 uvicorn = "*"
 plotly = "*"
+scikit-learn = "*"
+gensim = "*"
+nltk = "*"
+bs4 = "*"
 
 [requires]
 python_version = "3.7"
