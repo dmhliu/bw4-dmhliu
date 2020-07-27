@@ -1,5 +1,6 @@
 import logging
 import random
+import astropy.constants.tests.test_pickle
 
 from fastapi import APIRouter
 import pandas as pd
@@ -7,6 +8,32 @@ from pydantic import BaseModel, Field, validator
 
 log = logging.getLogger(__name__)
 router = APIRouter()
+
+with open('.notebooks/nb_selftext.pkl', 'rb') as file:
+    model = pickle.load(file)
+
+
+
+"""TEMP:  this is the function used to clean the training text. used it on the strings
+coming from the API to ensure consistency
+"""
+REPLACE_BY_SPACE_RE = re.compile('[/(){}\[\]\|@,;]')
+BAD_SYMBOLS_RE = re.compile('[^0-9a-z #+_]')
+STOPWORDS = set(stopwords.words('english'))
+
+
+def clean_text(text):
+    """
+        text: a string
+        
+        return: modified initial string
+    """
+    text = BeautifulSoup(text, "lxml").text # HTML decoding
+    text = text.lower() # lowercase text
+    text = REPLACE_BY_SPACE_RE.sub(' ', text) # replace REPLACE_BY_SPACE_RE symbols by space in text
+    text = BAD_SYMBOLS_RE.sub('', text) # delete symbols which are in BAD_SYMBOLS_RE from text
+    text = ' '.join(word for word in text.split() if word not in STOPWORDS) # delete stopwords from text
+    return text
 
 
 class Item(BaseModel):
@@ -29,12 +56,10 @@ class Item(BaseModel):
 
 @router.post('/predict')
 async def predict(item: Item):
-    """Make random baseline predictions for classification problem."""
+    """Make baseline predictions for classification problem."""
     X_new = item.to_df()
     log.info(X_new)
-    y_pred = random.choice([True, False])
-    y_pred_proba = random.random() / 2 + 0.5
+    y_pred = model.predict(X_new)
     return {
-        'prediction': y_pred,
-        'probability': y_pred_proba
+        'prediction': y_pred
     }
